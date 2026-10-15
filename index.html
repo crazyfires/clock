@@ -199,10 +199,25 @@
             fitDateText();
         }
 
-        // 初始化
+        // 秒级轮询优化：每秒检查真实时间，分钟变化立刻刷新，消除固定滞后
+        var lastDisplayedMinute = null;
+        function checkTimeUpdate() {
+            var now = new Date();
+            var h = now.getHours();
+            var m = now.getMinutes();
+            var currentMinuteKey = h + ':' + m;
+            // 仅当分钟真的发生变化时才更新页面内容
+            if (currentMinuteKey !== lastDisplayedMinute) {
+                updateClock();
+                lastDisplayedMinute = currentMinuteKey;
+            }
+        }
+        // 首次初始化
         updateClock();
-        // 每分钟更新
-        setInterval(updateClock, 60000);
+        var initNow = new Date();
+        lastDisplayedMinute = initNow.getHours() + ':' + initNow.getMinutes();
+        // 每秒轮询检测，分钟变化立刻触发更新
+        setInterval(checkTimeUpdate, 1000);
         // 窗口变化防抖重算
         var resizeTimer;
         window.addEventListener('resize', function() {
