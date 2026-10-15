@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>墙面时钟</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            background: #000;
+            color: #fff;
+            /* 优先调用苹方字体，找不到再fallback系统其他字体 */
+            font-family: "PingFang SC", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-weight: 900;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .clock-container {
+            height: 100vh;
+            display: -webkit-box;
+            display: flex;
+            -webkit-box-orient: vertical;
+            -webkit-box-direction: normal;
+            flex-direction: column;
+        }
+        .time-block {
+            height: 60vh;
+            display: -webkit-box;
+            display: flex;
+            -webkit-box-align: center;
+            align-items: center;
+            -webkit-box-pack: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .date-block {
+            height: 40vh;
+            display: -webkit-box;
+            display: flex;
+            -webkit-box-align: center;
+            align-items: center;
+            -webkit-box-pack: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        #time {
+            white-space: nowrap;
+            line-height: 1;
+            letter-spacing: 0.02em;
+        }
+        /* 日期内联布局：小前缀+大主体，按文字书写基线对齐，保证视觉底部齐平 */
+        .date-inner {
+            display: -webkit-inline-box;
+            display: inline-flex;
+            -webkit-box-align: baseline;
+            align-items: baseline;
+            line-height: 1;
+        }
+        #date-prefix {
+            white-space: nowrap;
+            line-height: 1;
+            margin-right: 0.08em; /* 小前缀和大数字之间的间距，随字号自动缩放 */
+        }
+        #date-main {
+            white-space: nowrap;
+            line-height: 1;
+            letter-spacing: 0.02em;
+        }
+    </style>
+</head>
+<body>
+    <div class="clock-container">
+        <div class="time-block">
+            <div id="time">00:00</div>
+        </div>
+        <div class="date-block">
+            <div class="date-inner">
+                <div id="date-prefix">20</div>
+                <div id="date-main">261014</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var timeEl = document.getElementById('time');
+        var datePrefixEl = document.getElementById('date-prefix');
+        var dateMainEl = document.getElementById('date-main');
+
+        // 时间元素：双约束（宽+高）撑满最大字号
+        function fitTimeText() {
+            var parent = timeEl.parentElement;
+            var maxWidth = parent.clientWidth * 0.96;
+            var maxHeight = parent.clientHeight * 0.88;
+            
+            var fontSize = 50;
+            timeEl.style.fontSize = fontSize + 'px';
+            
+            // 大步快速放大
+            while (true) {
+                timeEl.style.fontSize = (fontSize + 20) + 'px';
+                var curWidth = timeEl.offsetWidth;
+                var curHeight = timeEl.offsetHeight;
+                if (curWidth > maxWidth || curHeight > maxHeight) {
+                    fontSize -= 20;
+                    timeEl.style.fontSize = fontSize + 'px';
+                    break;
+                }
+                fontSize += 20;
+                if (fontSize > 1200) break;
+            }
+            // 精细微调1px
+            while (true) {
+                timeEl.style.fontSize = (fontSize + 1) + 'px';
+                var curWidth = timeEl.offsetWidth;
+                var curHeight = timeEl.offsetHeight;
+                if (curWidth > maxWidth || curHeight > maxHeight) {
+                    timeEl.style.fontSize = fontSize + 'px';
+                    break;
+                }
+                fontSize += 1;
+                if (fontSize > 1200) break;
+            }
+        }
+
+        // 日期元素：小前缀固定为大字40%大小，大主体撑满剩余宽高
+        function fitDateText() {
+            var dateBlock = dateMainEl.parentElement.parentElement;
+            var dateInner = dateMainEl.parentElement;
+            var maxTotalWidth = dateBlock.clientWidth * 0.96;
+            var maxTotalHeight = dateBlock.clientHeight * 0.88;
+            
+            var bigFont = 50;
+            dateMainEl.style.fontSize = bigFont + 'px';
+            datePrefixEl.style.fontSize = (bigFont * 0.4) + 'px';
+            
+            // 大步快速放大
+            while (true) {
+                bigFont += 20;
+                dateMainEl.style.fontSize = bigFont + 'px';
+                datePrefixEl.style.fontSize = (bigFont * 0.4) + 'px';
+                var totalWidth = dateInner.offsetWidth; // 直接取容器实际渲染宽度，自动包含间距和margin
+                var totalHeight = dateMainEl.offsetHeight;
+                if (totalWidth > maxTotalWidth || totalHeight > maxTotalHeight) {
+                    bigFont -= 20;
+                    dateMainEl.style.fontSize = bigFont + 'px';
+                    datePrefixEl.style.fontSize = (bigFont * 0.4) + 'px';
+                    break;
+                }
+                if (bigFont > 1200) break;
+            }
+            // 精细微调1px
+            while (true) {
+                bigFont += 1;
+                dateMainEl.style.fontSize = bigFont + 'px';
+                datePrefixEl.style.fontSize = (bigFont * 0.4) + 'px';
+                var totalWidth = dateInner.offsetWidth;
+                var totalHeight = dateMainEl.offsetHeight;
+                if (totalWidth > maxTotalWidth || totalHeight > maxTotalHeight) {
+                    bigFont -= 1;
+                    dateMainEl.style.fontSize = bigFont + 'px';
+                    datePrefixEl.style.fontSize = (bigFont * 0.4) + 'px';
+                    break;
+                }
+                if (bigFont > 1200) break;
+            }
+        }
+
+        // 更新时间和日期
+        function updateClock() {
+            var now = new Date();
+            
+            // 24小时制 HH:MM
+            var h = now.getHours();
+            var m = now.getMinutes();
+            h = h < 10 ? '0' + h : h;
+            m = m < 10 ? '0' + m : m;
+            timeEl.textContent = h + ':' + m;
+            
+            // 日期拆分：前两位小"20" + 后6位大"261014"
+            var y = String(now.getFullYear());
+            var mon = now.getMonth() + 1;
+            var d = now.getDate();
+            mon = mon < 10 ? '0' + mon : mon;
+            d = d < 10 ? '0' + d : d;
+            datePrefixEl.textContent = y.slice(0, 2); // "20"
+            dateMainEl.textContent = y.slice(2) + mon + d; // "26"+"10"+"14" = "261014"
+            
+            // 重新适配字号
+            fitTimeText();
+            fitDateText();
+        }
+
+        // 初始化
+        updateClock();
+        // 每分钟更新
+        setInterval(updateClock, 60000);
+        // 窗口变化防抖重算
+        var resizeTimer;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(function() {
+                fitTimeText();
+                fitDateText();
+            }, 100);
+        });
+        // 横竖屏切换延迟重算
+        window.addEventListener('orientationchange', function() {
+            setTimeout(updateClock, 300);
+        });
+    </script>
+</body>
+</html>
